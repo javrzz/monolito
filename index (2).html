@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>Realidad Aumentada — Vasija 3A</title>
+
+    <!-- A-Frame 1.6.0 (versión moderna y estable) -->
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.6.0/dist/aframe.min.js"></script>
+
+    <!-- AR.js 3.4.8 oficial (AR-js-org), servido con versión fija desde jsDelivr.
+         'aframe-ar.js' incluye seguimiento por marcador (barcode/pattern) + imagen. -->
+    <script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js@3.4.8/aframe/build/aframe-ar.js"></script>
+
+    <!-- Cargador de modelos GLB/GLTF -->
+    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.5.4/dist/aframe-extras.loaders.min.js"></script>
+
+    <style>
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; font-family: system-ui, -apple-system, sans-serif; }
+
+        /* Loader mientras carga la librería / cámara */
+        #loader {
+            position: fixed; inset: 0; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 18px; background: #111; color: #fff; text-align: center; padding: 24px;
+        }
+        #loader .spinner {
+            width: 42px; height: 42px; border: 4px solid rgba(255,255,255,.25);
+            border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Aviso de instrucciones */
+        #hint {
+            position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+            background: rgba(0,0,0,.6); color: #fff; text-align: center;
+            padding: 10px 16px; font-size: 14px; line-height: 1.35;
+            transition: opacity .4s ease;
+        }
+        #hint.hidden { opacity: 0; pointer-events: none; }
+    </style>
+</head>
+
+<body>
+    <div id="loader">
+        <div class="spinner"></div>
+        <div>Cargando… permití el acceso a la cámara</div>
+    </div>
+
+    <div id="hint">Apuntá la cámara al marcador para ver la pieza en 3D</div>
+
+    <a-scene
+        vr-mode-ui="enabled: false"
+        renderer="antialias: true; logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
+        embedded
+        arjs="sourceType: webcam;
+              detectionMode: mono_and_matrix;
+              matrixCodeType: 4x4_BCH_13_5_5;
+              debugUIEnabled: false;">
+
+        <a-assets timeout="30000">
+            <!-- Tu modelo servido por jsDelivr (CORS correcto). Cambiá el nombre del .glb por el tuyo.
+                 Formato: https://cdn.jsdelivr.net/gh/USUARIO/REPO@RAMA/ruta/modelo.glb -->
+            <a-asset-item id="modelo"
+                src="modelos/monolito.glb"></a-asset-item>
+        </a-assets>
+
+        <!-- Marcador de código de barras. value='1' = el mismo tipo que ya tenés impreso.
+             Si tu marcador impreso es otro número, cambiá el value. -->
+        <a-marker id="marcador" type="barcode" value="1">
+            <a-entity
+                gltf-model="#modelo"
+                scale="2 2 2"
+                position="0 0 0"
+                rotation="0 0 0"></a-entity>
+        </a-marker>
+
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+        const scene  = document.querySelector('a-scene');
+        const loader = document.getElementById('loader');
+        const hint   = document.getElementById('hint');
+        const marker = document.getElementById('marcador');
+
+        // Ocultar el loader cuando la escena está lista
+        scene.addEventListener('loaded', () => { loader.style.display = 'none'; });
+        // Respaldo por si 'loaded' tarda: lo sacamos a los 6s igual
+        setTimeout(() => { loader.style.display = 'none'; }, 6000);
+
+        // Ocultar/mostrar la instrucción según se detecte el marcador
+        marker.addEventListener('markerFound', () => hint.classList.add('hidden'));
+        marker.addEventListener('markerLost',  () => hint.classList.remove('hidden'));
+    </script>
+</body>
+</html>
